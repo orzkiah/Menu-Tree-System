@@ -6,16 +6,16 @@ Clean-Architecture backend and a Next.js (App Router) + TypeScript frontend.
 
 ## Features
 
-- 🌳 Hierarchical menu tree with **unlimited depth** and connector lines (├ / └ / │)
-- ➕ Create / ✏️ Edit / 🗑️ Delete menus (delete **cascades** to children)
-- 🔀 **Move** between parents and **Reorder** among siblings (circular-reference safe)
-- 🔍 Client-side search/filter that preserves hierarchy
-- ⬇️ Expand / collapse (per-node + Expand All / Collapse All)
-- 📱 Responsive desktop & mobile layout
-- ⏳ Loading skeletons, error states with retry, empty-state CTA
-- 🔔 Toast notifications (Sonner)
-- 📖 Swagger/OpenAPI documentation
-- 🐳 Dockerized (dev hot reload + production multi-stage)
+- Hierarchical menu tree with **unlimited depth** and connector lines (├ / └ / │)
+- Create / ✏️ Edit / 🗑️ Delete menus (delete **cascades** to children)
+- **Move** between parents and **Reorder** among siblings (circular-reference safe)
+- Client-side search/filter that preserves hierarchy
+- ⬇Expand / collapse (per-node + Expand All / Collapse All)
+- Responsive desktop & mobile layout
+- Loading skeletons, error states with retry, empty-state CTA
+- Toast notifications (Sonner)
+- Swagger/OpenAPI documentation
+- Dockerized (dev hot reload + production multi-stage)
 
 ## Tech Stack
 
