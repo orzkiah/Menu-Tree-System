@@ -4,6 +4,13 @@ A production-ready fullstack application for managing a **hierarchical menu tree
 unlimited nesting depth, full CRUD, search, and move/reorder — built with a Go (Gin + GORM)
 Clean-Architecture backend and a Next.js (App Router) + TypeScript frontend.
 
+## Demo
+
+🎥 Watch the walkthrough: [`docs/demo.mp4`](docs/demo.mp4)
+
+> Tip: on GitHub, click the file to play it in the browser, or download it from the
+> repo. It demonstrates create/edit/delete, search, expand/collapse and the menu tree.
+
 ## Features
 
 - Hierarchical menu tree with **unlimited depth** and connector lines (├ / └ / │)
