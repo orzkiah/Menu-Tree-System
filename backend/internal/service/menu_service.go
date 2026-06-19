@@ -21,6 +21,8 @@ type MenuService interface {
 	Create(ctx context.Context, req dto.CreateMenuRequest) (*dto.MenuResponse, error)
 	Update(ctx context.Context, id uuid.UUID, req dto.UpdateMenuRequest) (*dto.MenuResponse, error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	Move(ctx context.Context, id uuid.UUID, req dto.MoveMenuRequest) (*dto.MenuResponse, error)
+	Reorder(ctx context.Context, id uuid.UUID, req dto.ReorderMenuRequest) (*dto.MenuResponse, error)
 }
 
 type menuService struct {
@@ -131,6 +133,95 @@ func (s *menuService) Delete(ctx context.Context, id uuid.UUID) error {
 		return apperrors.ErrMenuNotFound
 	}
 	return s.repo.Delete(ctx, id)
+}
+
+// Move re-parents a menu to a new parent/position inside a transaction,
+// rejecting self-parenting and any move that would create a cycle.
+func (s *menuService) Move(ctx context.Context, id uuid.UUID, req dto.MoveMenuRequest) (*dto.MenuResponse, error) {
+	if req.ParentID != nil && *req.ParentID == id {
+		return nil, apperrors.ErrSelfParent
+	}
+
+	var moved domain.Menu
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		r := s.repo.WithTx(tx)
+
+		node, err := r.FindByID(ctx, id)
+		if err != nil {
+			return err
+		}
+		if node == nil {
+			return apperrors.ErrMenuNotFound
+		}
+
+		if req.ParentID != nil {
+			parent, err := r.FindByID(ctx, *req.ParentID)
+			if err != nil {
+				return err
+			}
+			if parent == nil {
+				return apperrors.ErrParentNotFound
+			}
+			// Walk up from the target parent; hitting the node itself means the
+			// target is a descendant of the node → cycle.
+			cursor := parent
+			for cursor != nil {
+				if cursor.ID == id {
+					return apperrors.ErrCircularReference
+				}
+				if cursor.ParentID == nil {
+					break
+				}
+				cursor, err = r.FindByID(ctx, *cursor.ParentID)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		if err := r.Move(ctx, id, req.ParentID, req.Position); err != nil {
+			return err
+		}
+		updated, err := r.FindByID(ctx, id)
+		if err != nil {
+			return err
+		}
+		moved = *updated
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	res := dto.FromMenu(moved)
+	return &res, nil
+}
+
+// Reorder changes a menu's position among its siblings.
+func (s *menuService) Reorder(ctx context.Context, id uuid.UUID, req dto.ReorderMenuRequest) (*dto.MenuResponse, error) {
+	var updated domain.Menu
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		r := s.repo.WithTx(tx)
+		node, err := r.FindByID(ctx, id)
+		if err != nil {
+			return err
+		}
+		if node == nil {
+			return apperrors.ErrMenuNotFound
+		}
+		if err := r.Reorder(ctx, id, req.Position); err != nil {
+			return err
+		}
+		node.Position = req.Position
+		updated = *node
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	res := dto.FromMenu(updated)
+	return &res, nil
 }
 
 // ensureParentExists validates that a referenced parent exists (no-op for roots).

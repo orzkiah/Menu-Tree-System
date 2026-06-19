@@ -20,6 +20,11 @@ import (
 	"go.uber.org/zap"
 )
 
+//	@title			Menu Tree System API
+//	@version		1.0
+//	@description	RESTful API for a hierarchical menu tree with unlimited nesting.
+//	@BasePath		/api
+
 func main() {
 	// 1. Configuration.
 	cfg, err := configs.Load()

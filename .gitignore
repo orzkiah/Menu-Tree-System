@@ -11,8 +11,6 @@ backend/tmp/
 backend/main
 backend/*.exe
 backend/coverage.out
-backend/docs/swagger.json
-backend/docs/swagger.yaml
 
 # ---------- Frontend (Next.js) ----------
 frontend/node_modules/

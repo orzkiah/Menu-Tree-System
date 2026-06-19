@@ -21,6 +21,11 @@ type MenuRepository interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 	ExistsByID(ctx context.Context, id uuid.UUID) (bool, error)
 
+	// Move re-parents a menu and sets its position.
+	Move(ctx context.Context, id uuid.UUID, parentID *uuid.UUID, position int) error
+	// Reorder updates a menu's position among its siblings.
+	Reorder(ctx context.Context, id uuid.UUID, position int) error
+
 	// WithTx returns a repository bound to the given transaction so the service
 	// can compose multiple operations atomically.
 	WithTx(tx *gorm.DB) MenuRepository

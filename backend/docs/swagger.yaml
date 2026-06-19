@@ -1,0 +1,286 @@
+basePath: /api
+definitions:
+  dto.CreateMenuRequest:
+    properties:
+      icon:
+        maxLength: 100
+        type: string
+      parentId:
+        type: string
+      position:
+        minimum: 0
+        type: integer
+      slug:
+        maxLength: 255
+        type: string
+      title:
+        maxLength: 255
+        type: string
+    required:
+    - title
+    type: object
+  dto.MoveMenuRequest:
+    properties:
+      parentId:
+        type: string
+      position:
+        minimum: 0
+        type: integer
+    type: object
+  dto.ReorderMenuRequest:
+    properties:
+      position:
+        minimum: 0
+        type: integer
+    type: object
+  dto.UpdateMenuRequest:
+    properties:
+      icon:
+        maxLength: 100
+        type: string
+      parentId:
+        type: string
+      position:
+        minimum: 0
+        type: integer
+      slug:
+        maxLength: 255
+        type: string
+      title:
+        maxLength: 255
+        type: string
+    required:
+    - title
+    type: object
+  response.Body:
+    properties:
+      data: {}
+      errors: {}
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+info:
+  contact: {}
+  description: RESTful API for a hierarchical menu tree with unlimited nesting.
+  title: Menu Tree System API
+  version: "1.0"
+paths:
+  /menus:
+    get:
+      description: Returns all menus as a nested tree. Optional case-insensitive search
+        by title/slug.
+      parameters:
+      - description: Search keyword
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Body'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Body'
+      summary: List menus as a tree
+      tags:
+      - menus
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Menu to create
+        in: body
+        name: menu
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateMenuRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Body'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Body'
+      summary: Create a menu
+      tags:
+      - menus
+  /menus/{id}:
+    delete:
+      parameters:
+      - description: Menu UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Body'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Body'
+      summary: Delete a menu (cascades to children)
+      tags:
+      - menus
+    get:
+      parameters:
+      - description: Menu UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Body'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Body'
+      summary: Get a menu by ID
+      tags:
+      - menus
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Menu UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated menu
+        in: body
+        name: menu
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateMenuRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Body'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Body'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Body'
+      summary: Update a menu
+      tags:
+      - menus
+  /menus/{id}/move:
+    patch:
+      consumes:
+      - application/json
+      description: Re-parents a menu. Rejects self-parenting and cyclic moves.
+      parameters:
+      - description: Menu UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New parent and position
+        in: body
+        name: move
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MoveMenuRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Body'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Body'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Body'
+      summary: Move a menu to a new parent/position
+      tags:
+      - menus
+  /menus/{id}/reorder:
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Menu UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: New position
+        in: body
+        name: reorder
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReorderMenuRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Body'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Body'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Body'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/response.Body'
+      summary: Reorder a menu among its siblings
+      tags:
+      - menus
+swagger: "2.0"

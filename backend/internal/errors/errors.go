@@ -13,4 +13,8 @@ var (
 
 	// ErrSelfParent is returned when a menu is set as its own parent.
 	ErrSelfParent = errors.New("a menu cannot be its own parent")
+
+	// ErrCircularReference is returned when a move would create a cycle (moving a
+	// menu under one of its own descendants).
+	ErrCircularReference = errors.New("cannot move a menu under its own descendant")
 )

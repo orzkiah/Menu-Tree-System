@@ -69,6 +69,21 @@ func (r *menuRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Delete(&domain.Menu{}, "id = ?", id).Error
 }
 
+// Move re-parents a menu and sets its position in one update. Passing a nil
+// parentID moves the menu to the root level.
+func (r *menuRepository) Move(ctx context.Context, id uuid.UUID, parentID *uuid.UUID, position int) error {
+	return r.db.WithContext(ctx).Model(&domain.Menu{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{"parent_id": parentID, "position": position}).Error
+}
+
+// Reorder updates only a menu's position.
+func (r *menuRepository) Reorder(ctx context.Context, id uuid.UUID, position int) error {
+	return r.db.WithContext(ctx).Model(&domain.Menu{}).
+		Where("id = ?", id).
+		Update("position", position).Error
+}
+
 func (r *menuRepository) ExistsByID(ctx context.Context, id uuid.UUID) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Model(&domain.Menu{}).Where("id = ?", id).Count(&count).Error
