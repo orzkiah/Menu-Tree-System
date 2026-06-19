@@ -64,7 +64,7 @@ export function MenuTree() {
   return (
     <div className="scrollbar-thin max-h-[60vh] overflow-y-auto pr-1">
       {filtered.map((menu) => (
-        <MenuNode key={menu.id} menu={menu} depth={0} />
+        <MenuNode key={menu.id} menu={menu} guides={[]} />
       ))}
     </div>
   );
