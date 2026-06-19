@@ -3,6 +3,7 @@ package routes
 import (
 	"net/http"
 
+	"menu-tree-backend/internal/handler"
 	"menu-tree-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
@@ -10,7 +11,6 @@ import (
 )
 
 // New builds the Gin engine with base middleware and the health endpoint.
-// Menu routes are registered in later phases via RegisterMenuRoutes.
 func New(log *zap.Logger) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -21,4 +21,16 @@ func New(log *zap.Logger) *gin.Engine {
 	})
 
 	return r
+}
+
+// RegisterMenuRoutes mounts the menu CRUD endpoints under /api/menus.
+// Tree (GET collection), move and reorder routes are added in later phases.
+func RegisterMenuRoutes(r *gin.Engine, h *handler.MenuHandler) {
+	menus := r.Group("/api/menus")
+	{
+		menus.POST("", h.Create)
+		menus.GET("/:id", h.GetByID)
+		menus.PUT("/:id", h.Update)
+		menus.DELETE("/:id", h.Delete)
+	}
 }

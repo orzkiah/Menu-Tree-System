@@ -9,6 +9,10 @@ import (
 	"time"
 
 	"menu-tree-backend/configs"
+	"menu-tree-backend/internal/handler"
+	"menu-tree-backend/internal/repository"
+	"menu-tree-backend/internal/service"
+	"menu-tree-backend/internal/validator"
 	"menu-tree-backend/pkg/database"
 	"menu-tree-backend/pkg/logger"
 	"menu-tree-backend/routes"
@@ -40,8 +44,14 @@ func main() {
 	}
 	log.Info("database connected and migrated")
 
-	// 4. HTTP server.
+	// 4. Dependency wiring: repository -> service -> handler.
+	menuRepo := repository.NewMenuRepository(db)
+	menuSvc := service.NewMenuService(menuRepo, db)
+	menuHandler := handler.NewMenuHandler(menuSvc, validator.New())
+
+	// 5. HTTP server.
 	router := routes.New(log)
+	routes.RegisterMenuRoutes(router, menuHandler)
 	srv := &http.Server{
 		Addr:    ":" + cfg.AppPort,
 		Handler: router,
@@ -58,7 +68,7 @@ func main() {
 		}
 	}()
 
-	// 5. Graceful shutdown — wait for signal, then drain with a timeout.
+	// 6. Graceful shutdown — wait for signal, then drain with a timeout.
 	<-ctx.Done()
 	log.Info("shutdown signal received, draining connections")
 
