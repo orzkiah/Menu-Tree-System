@@ -1,0 +1,13 @@
+# Development image with Next.js hot reload.
+FROM node:20-alpine
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+EXPOSE 3000
+
+# Source is bind-mounted in docker-compose; Next reloads on change.
+CMD ["npm", "run", "dev"]

@@ -1,0 +1,7 @@
+tmp/
+bin/
+*.exe
+*.out
+.env
+.env.local
+.git
