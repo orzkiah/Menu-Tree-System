@@ -16,12 +16,14 @@ interface MenuNodeProps {
  */
 export function MenuNode({ menu, depth }: MenuNodeProps) {
   const expandedNodes = useMenuStore((s) => s.expandedNodes);
-  const toggleExpand = useMenuStore((s) => s.toggleExpand);
+  const toggleNode = useMenuStore((s) => s.toggleNode);
   const selectedNode = useMenuStore((s) => s.selectedNode);
   const setSelectedNode = useMenuStore((s) => s.setSelectedNode);
+  const searchTerm = useMenuStore((s) => s.searchTerm);
 
   const hasChildren = menu.children.length > 0;
-  const isExpanded = expandedNodes.has(menu.id);
+  // During an active search, force-expand so matching descendants stay visible.
+  const isExpanded = expandedNodes.has(menu.id) || searchTerm.trim() !== "";
   const isSelected = selectedNode?.id === menu.id;
 
   return (
@@ -35,7 +37,7 @@ export function MenuNode({ menu, depth }: MenuNodeProps) {
         {/* Expand / collapse toggle (or spacer to keep alignment) */}
         {hasChildren ? (
           <button
-            onClick={() => toggleExpand(menu.id)}
+            onClick={() => toggleNode(menu.id)}
             className="flex h-5 w-5 items-center justify-center rounded text-slate-400 hover:bg-slate-200 hover:text-slate-600"
             aria-label={isExpanded ? "Collapse" : "Expand"}
           >

@@ -1,29 +1,35 @@
 import { create } from "zustand";
-import type { Menu } from "@/types/menu";
+import type { CreateMenuInput, Menu, UpdateMenuInput } from "@/types/menu";
+import { menuService } from "@/services/menu.service";
+import { getErrorMessage } from "@/lib/errors";
+import { collectIds } from "@/lib/tree";
 
 interface MenuState {
-  // Data
+  // State
   menus: Menu[];
   selectedNode: Menu | null;
-
-  // UI state
   expandedNodes: Set<string>;
   searchTerm: string;
   loading: boolean;
   error: string | null;
 
-  // Setters (data fetching & CRUD are added in a later phase)
-  setMenus: (menus: Menu[]) => void;
+  // Async actions
+  fetchMenus: () => Promise<void>;
+  fetchMenu: (id: string) => Promise<void>;
+  createMenu: (payload: CreateMenuInput) => Promise<void>;
+  updateMenu: (id: string, payload: UpdateMenuInput) => Promise<void>;
+  deleteMenu: (id: string) => Promise<void>;
+
+  // UI actions
   setSelectedNode: (node: Menu | null) => void;
-  toggleExpand: (id: string) => void;
-  expandAll: (ids: string[]) => void;
+  setSearchTerm: (term: string) => void;
+  toggleNode: (id: string) => void;
+  expandAll: () => void;
   collapseAll: () => void;
-  setSearch: (term: string) => void;
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
+  clearError: () => void;
 }
 
-export const useMenuStore = create<MenuState>((set) => ({
+export const useMenuStore = create<MenuState>((set, get) => ({
   menus: [],
   selectedNode: null,
   expandedNodes: new Set<string>(),
@@ -31,10 +37,66 @@ export const useMenuStore = create<MenuState>((set) => ({
   loading: false,
   error: null,
 
-  setMenus: (menus) => set({ menus }),
-  setSelectedNode: (selectedNode) => set({ selectedNode }),
+  // Loads the full menu tree.
+  fetchMenus: async () => {
+    set({ loading: true, error: null });
+    try {
+      const menus = await menuService.getTree();
+      set({ menus, loading: false });
+    } catch (err) {
+      set({ error: getErrorMessage(err), loading: false });
+    }
+  },
 
-  toggleExpand: (id) =>
+  // Loads a single menu and selects it.
+  fetchMenu: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const node = await menuService.getById(id);
+      set({ selectedNode: node, loading: false });
+    } catch (err) {
+      set({ error: getErrorMessage(err), loading: false });
+    }
+  },
+
+  // Create / update / delete refresh the tree on success.
+  createMenu: async (payload) => {
+    set({ loading: true, error: null });
+    try {
+      await menuService.create(payload);
+      await get().fetchMenus();
+    } catch (err) {
+      set({ error: getErrorMessage(err), loading: false });
+    }
+  },
+
+  updateMenu: async (id, payload) => {
+    set({ loading: true, error: null });
+    try {
+      await menuService.update(id, payload);
+      await get().fetchMenus();
+    } catch (err) {
+      set({ error: getErrorMessage(err), loading: false });
+    }
+  },
+
+  deleteMenu: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      await menuService.remove(id);
+      if (get().selectedNode?.id === id) {
+        set({ selectedNode: null });
+      }
+      await get().fetchMenus();
+    } catch (err) {
+      set({ error: getErrorMessage(err), loading: false });
+    }
+  },
+
+  setSelectedNode: (selectedNode) => set({ selectedNode }),
+  setSearchTerm: (searchTerm) => set({ searchTerm }),
+
+  toggleNode: (id) =>
     set((state) => {
       const next = new Set(state.expandedNodes);
       if (next.has(id)) {
@@ -45,10 +107,7 @@ export const useMenuStore = create<MenuState>((set) => ({
       return { expandedNodes: next };
     }),
 
-  expandAll: (ids) => set({ expandedNodes: new Set(ids) }),
+  expandAll: () => set((state) => ({ expandedNodes: new Set(collectIds(state.menus)) })),
   collapseAll: () => set({ expandedNodes: new Set<string>() }),
-
-  setSearch: (searchTerm) => set({ searchTerm }),
-  setLoading: (loading) => set({ loading }),
-  setError: (error) => set({ error }),
+  clearError: () => set({ error: null }),
 }));

@@ -5,22 +5,20 @@ import { useEffect } from "react";
 import { MenuTree } from "@/components/menu-tree/MenuTree";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { Sidebar } from "@/components/ui/Sidebar";
-import { collectIds, depthOfId } from "@/lib/tree";
-import { MOCK_MENUS } from "@/lib/mock-menus";
+import { depthOfId } from "@/lib/tree";
 import { useMenuStore } from "@/stores/menu.store";
 
 export default function HomePage() {
   const menus = useMenuStore((s) => s.menus);
   const selectedNode = useMenuStore((s) => s.selectedNode);
-  const setMenus = useMenuStore((s) => s.setMenus);
+  const fetchMenus = useMenuStore((s) => s.fetchMenus);
   const expandAll = useMenuStore((s) => s.expandAll);
   const collapseAll = useMenuStore((s) => s.collapseAll);
 
-  // Seed presentational mock data (replaced by a live fetch in Phase 9).
+  // Load the live menu tree on mount.
   useEffect(() => {
-    setMenus(MOCK_MENUS);
-    expandAll(collectIds(MOCK_MENUS));
-  }, [setMenus, expandAll]);
+    void fetchMenus();
+  }, [fetchMenus]);
 
   const depth = selectedNode ? depthOfId(menus, selectedNode.id) : 0;
 
@@ -59,7 +57,7 @@ export default function HomePage() {
         {/* Controls */}
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <button
-            onClick={() => expandAll(collectIds(menus))}
+            onClick={expandAll}
             className="rounded-full bg-slate-800 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-slate-900"
           >
             Expand All

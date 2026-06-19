@@ -3,10 +3,10 @@
 import { Search } from "lucide-react";
 import { useMenuStore } from "@/stores/menu.store";
 
-/** Search input bound to the store's searchTerm. Filtering is wired in Phase 9. */
+/** Search input bound to the store's searchTerm; filtering happens in MenuTree. */
 export function SearchBar() {
   const searchTerm = useMenuStore((s) => s.searchTerm);
-  const setSearch = useMenuStore((s) => s.setSearch);
+  const setSearchTerm = useMenuStore((s) => s.setSearchTerm);
 
   return (
     <div className="relative w-full max-w-sm">
@@ -14,7 +14,7 @@ export function SearchBar() {
       <input
         type="text"
         value={searchTerm}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => setSearchTerm(e.target.value)}
         placeholder="Search menu..."
         className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
       />
