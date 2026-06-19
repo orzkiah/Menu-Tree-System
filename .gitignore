@@ -27,3 +27,6 @@ postgres-data/
 # ---------- IDE ----------
 .idea/
 .vscode/
+
+# ---------- Local dev tooling ----------
+.claude/
