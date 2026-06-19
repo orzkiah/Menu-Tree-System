@@ -4,16 +4,19 @@ import (
 	"net/http"
 
 	"menu-tree-backend/internal/handler"
+	"menu-tree-backend/internal/middleware"
 	"menu-tree-backend/pkg/response"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-// New builds the Gin engine with base middleware and the health endpoint.
-func New(log *zap.Logger) *gin.Engine {
+// New builds the Gin engine with base middleware (recovery + CORS) and the
+// health endpoint.
+func New(log *zap.Logger, allowedOrigins []string) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
+	r.Use(middleware.CORS(allowedOrigins))
 
 	// Health check — used by Docker/orchestrators and manual verification.
 	r.GET("/health", func(c *gin.Context) {

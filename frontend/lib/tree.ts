@@ -38,6 +38,34 @@ export function collectIds(menus: Menu[]): string[] {
   return ids;
 }
 
+/** Flat option for the parent-menu dropdown, indented by depth. */
+export interface MenuOption {
+  id: string;
+  label: string;
+  depth: number;
+}
+
+/**
+ * Flattens the tree into selectable parent options. When `excludeId` is given,
+ * that node and its entire subtree are skipped so a menu can't be parented to
+ * itself or one of its descendants.
+ */
+export function flattenForSelect(
+  menus: Menu[],
+  excludeId?: string,
+  depth = 0,
+): MenuOption[] {
+  const options: MenuOption[] = [];
+  for (const node of menus) {
+    if (node.id === excludeId) continue;
+    options.push({ id: node.id, label: node.title, depth });
+    if (node.children?.length) {
+      options.push(...flattenForSelect(node.children, excludeId, depth + 1));
+    }
+  }
+  return options;
+}
+
 /** Returns the 1-based depth of a node id within the tree, or 0 if not found. */
 export function depthOfId(menus: Menu[], id: string, depth = 1): number {
   for (const node of menus) {

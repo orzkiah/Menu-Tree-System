@@ -1,12 +1,15 @@
 "use client";
 
-import { ChevronDown, FolderTree, Grid2x2 } from "lucide-react";
+import { ChevronDown, FolderTree, Grid2x2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { MenuTree } from "@/components/menu-tree/MenuTree";
+import { ConfirmDeleteModal } from "@/components/modal/ConfirmDeleteModal";
+import { MenuFormModal } from "@/components/modal/MenuFormModal";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { Sidebar } from "@/components/ui/Sidebar";
 import { depthOfId } from "@/lib/tree";
 import { useMenuStore } from "@/stores/menu.store";
+import { useUIStore } from "@/stores/ui.store";
 
 export default function HomePage() {
   const menus = useMenuStore((s) => s.menus);
@@ -14,6 +17,7 @@ export default function HomePage() {
   const fetchMenus = useMenuStore((s) => s.fetchMenus);
   const expandAll = useMenuStore((s) => s.expandAll);
   const collapseAll = useMenuStore((s) => s.collapseAll);
+  const openCreate = useUIStore((s) => s.openCreate);
 
   // Load the live menu tree on mount.
   useEffect(() => {
@@ -57,6 +61,13 @@ export default function HomePage() {
         {/* Controls */}
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <button
+            onClick={() => openCreate(null)}
+            className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-1.5 text-sm font-medium text-white transition hover:bg-brand-dark"
+          >
+            <Plus className="h-4 w-4" />
+            Add Menu
+          </button>
+          <button
             onClick={expandAll}
             className="rounded-full bg-slate-800 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-slate-900"
           >
@@ -79,36 +90,29 @@ export default function HomePage() {
             <MenuTree />
           </div>
 
-          <DetailsPanel
-            id={selectedNode?.id ?? ""}
-            depth={depth}
-            parent={selectedNode?.parentId ?? ""}
-            name={selectedNode?.title ?? ""}
-          />
+          <DetailsPanel depth={depth} />
         </div>
       </main>
+
+      {/* Modals (driven by the UI store) */}
+      <MenuFormModal />
+      <ConfirmDeleteModal />
     </div>
   );
 }
 
-/** Read-only details/form panel mirroring the Figma right column. */
-function DetailsPanel({
-  id,
-  depth,
-  parent,
-  name,
-}: {
-  id: string;
-  depth: number;
-  parent: string;
-  name: string;
-}) {
+/** Details panel mirroring the Figma right column, with Edit/Delete actions. */
+function DetailsPanel({ depth }: { depth: number }) {
+  const selectedNode = useMenuStore((s) => s.selectedNode);
+  const openEdit = useUIStore((s) => s.openEdit);
+  const openDelete = useUIStore((s) => s.openDelete);
+
   return (
     <aside className="h-fit space-y-4 rounded-xl bg-slate-50/60 p-5">
       <Field label="Menu ID">
         <input
           readOnly
-          value={id}
+          value={selectedNode?.id ?? ""}
           placeholder="Select a menu"
           className="w-full truncate rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500"
         />
@@ -123,24 +127,39 @@ function DetailsPanel({
       <Field label="Parent Data">
         <input
           readOnly
-          value={parent || "Root"}
+          value={selectedNode?.parentId ?? "Root"}
           className="w-full truncate rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
         />
       </Field>
       <Field label="Name">
         <input
           readOnly
-          value={name}
+          value={selectedNode?.title ?? ""}
           placeholder="—"
           className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
         />
       </Field>
-      <button
-        type="button"
-        className="w-full rounded-full bg-brand py-2.5 text-sm font-medium text-white transition hover:bg-brand-dark"
-      >
-        Save
-      </button>
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          disabled={!selectedNode}
+          onClick={() => selectedNode && openEdit(selectedNode)}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-brand py-2.5 text-sm font-medium text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Pencil className="h-4 w-4" />
+          Edit
+        </button>
+        <button
+          type="button"
+          disabled={!selectedNode}
+          onClick={() => selectedNode && openDelete(selectedNode)}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-red-200 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Trash2 className="h-4 w-4" />
+          Delete
+        </button>
+      </div>
     </aside>
   );
 }

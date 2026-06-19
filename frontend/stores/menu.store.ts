@@ -1,8 +1,15 @@
 import { create } from "zustand";
 import type { CreateMenuInput, Menu, UpdateMenuInput } from "@/types/menu";
 import { menuService } from "@/services/menu.service";
-import { getErrorMessage } from "@/lib/errors";
+import { getErrorMessage, parseApiError } from "@/lib/errors";
 import { collectIds } from "@/lib/tree";
+
+/** Result of a create/update/delete mutation, consumed by the modals. */
+export interface MutationResult {
+  ok: boolean;
+  message: string;
+  errors: string[];
+}
 
 interface MenuState {
   // State
@@ -11,14 +18,15 @@ interface MenuState {
   expandedNodes: Set<string>;
   searchTerm: string;
   loading: boolean;
+  submitting: boolean;
   error: string | null;
 
   // Async actions
   fetchMenus: () => Promise<void>;
   fetchMenu: (id: string) => Promise<void>;
-  createMenu: (payload: CreateMenuInput) => Promise<void>;
-  updateMenu: (id: string, payload: UpdateMenuInput) => Promise<void>;
-  deleteMenu: (id: string) => Promise<void>;
+  createMenu: (payload: CreateMenuInput) => Promise<MutationResult>;
+  updateMenu: (id: string, payload: UpdateMenuInput) => Promise<MutationResult>;
+  deleteMenu: (id: string) => Promise<MutationResult>;
 
   // UI actions
   setSelectedNode: (node: Menu | null) => void;
@@ -35,6 +43,7 @@ export const useMenuStore = create<MenuState>((set, get) => ({
   expandedNodes: new Set<string>(),
   searchTerm: "",
   loading: false,
+  submitting: false,
   error: null,
 
   // Loads the full menu tree.
@@ -59,37 +68,53 @@ export const useMenuStore = create<MenuState>((set, get) => ({
     }
   },
 
-  // Create / update / delete refresh the tree on success.
+  // Create / update / delete refresh the tree on success and return a result
+  // (they intentionally do NOT set the global `error`, which is reserved for the
+  // tree fetch, so a failed submit keeps the modal open without breaking the tree).
   createMenu: async (payload) => {
-    set({ loading: true, error: null });
+    set({ submitting: true });
     try {
-      await menuService.create(payload);
+      const created = await menuService.create(payload);
       await get().fetchMenus();
+      set((state) => {
+        // Expand the parent so the new node is visible, then select it.
+        const expandedNodes = new Set(state.expandedNodes);
+        if (created.parentId) expandedNodes.add(created.parentId);
+        return { expandedNodes, selectedNode: created, submitting: false };
+      });
+      return { ok: true, message: "", errors: [] };
     } catch (err) {
-      set({ error: getErrorMessage(err), loading: false });
+      set({ submitting: false });
+      return { ok: false, ...parseApiError(err) };
     }
   },
 
   updateMenu: async (id, payload) => {
-    set({ loading: true, error: null });
+    set({ submitting: true });
     try {
-      await menuService.update(id, payload);
-      await get().fetchMenus();
+      const updated = await menuService.update(id, payload);
+      await get().fetchMenus(); // expandedNodes is preserved across refresh
+      set({ selectedNode: updated, submitting: false });
+      return { ok: true, message: "", errors: [] };
     } catch (err) {
-      set({ error: getErrorMessage(err), loading: false });
+      set({ submitting: false });
+      return { ok: false, ...parseApiError(err) };
     }
   },
 
   deleteMenu: async (id) => {
-    set({ loading: true, error: null });
+    set({ submitting: true });
     try {
       await menuService.remove(id);
-      if (get().selectedNode?.id === id) {
-        set({ selectedNode: null });
-      }
+      set((state) => ({
+        selectedNode: state.selectedNode?.id === id ? null : state.selectedNode,
+      }));
       await get().fetchMenus();
+      set({ submitting: false });
+      return { ok: true, message: "", errors: [] };
     } catch (err) {
-      set({ error: getErrorMessage(err), loading: false });
+      set({ submitting: false });
+      return { ok: false, ...parseApiError(err) };
     }
   },
 

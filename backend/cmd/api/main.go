@@ -50,7 +50,7 @@ func main() {
 	menuHandler := handler.NewMenuHandler(menuSvc, validator.New())
 
 	// 5. HTTP server.
-	router := routes.New(log)
+	router := routes.New(log, cfg.CORSAllowedOrigins)
 	routes.RegisterMenuRoutes(router, menuHandler)
 	srv := &http.Server{
 		Addr:    ":" + cfg.AppPort,

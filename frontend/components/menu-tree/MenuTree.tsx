@@ -1,11 +1,12 @@
 "use client";
 
-import { ListTree, SearchX } from "lucide-react";
+import { ListTree, Plus, SearchX } from "lucide-react";
 import { MenuNode } from "@/components/menu-node/MenuNode";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 import { filterTree } from "@/lib/tree";
 import { useMenuStore } from "@/stores/menu.store";
+import { useUIStore } from "@/stores/ui.store";
 
 /**
  * Renders the live menu hierarchy from the store, handling loading, error,
@@ -17,6 +18,7 @@ export function MenuTree() {
   const loading = useMenuStore((s) => s.loading);
   const error = useMenuStore((s) => s.error);
   const fetchMenus = useMenuStore((s) => s.fetchMenus);
+  const openCreate = useUIStore((s) => s.openCreate);
 
   // Loading (initial fetch — no data yet).
   if (loading && menus.length === 0) {
@@ -35,6 +37,13 @@ export function MenuTree() {
         <ListTree className="mb-1 h-8 w-8" />
         <p className="text-sm font-medium text-slate-500">No menus available.</p>
         <p className="text-xs">Create your first menu.</p>
+        <button
+          onClick={() => openCreate(null)}
+          className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-dark"
+        >
+          <Plus className="h-4 w-4" />
+          Create Menu
+        </button>
       </div>
     );
   }

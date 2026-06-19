@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import type { Menu } from "@/types/menu";
 import { useMenuStore } from "@/stores/menu.store";
+import { useUIStore } from "@/stores/ui.store";
 
 interface MenuNodeProps {
   menu: Menu;
@@ -20,6 +21,9 @@ export function MenuNode({ menu, depth }: MenuNodeProps) {
   const selectedNode = useMenuStore((s) => s.selectedNode);
   const setSelectedNode = useMenuStore((s) => s.setSelectedNode);
   const searchTerm = useMenuStore((s) => s.searchTerm);
+  const openCreate = useUIStore((s) => s.openCreate);
+  const openEdit = useUIStore((s) => s.openEdit);
+  const openDelete = useUIStore((s) => s.openDelete);
 
   const hasChildren = menu.children.length > 0;
   // During an active search, force-expand so matching descendants stay visible.
@@ -60,14 +64,36 @@ export function MenuNode({ menu, depth }: MenuNodeProps) {
           {menu.title}
         </button>
 
-        {/* Add-child affordance (visual only this phase) */}
-        <button
-          className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white opacity-0 transition group-hover:opacity-100"
-          aria-label="Add child menu"
-          type="button"
-        >
-          <Plus className="h-3 w-3" />
-        </button>
+        {/* Row actions — revealed on hover */}
+        <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+          <button
+            onClick={() => openCreate(menu.id)}
+            className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white hover:bg-brand-dark"
+            aria-label="Add child menu"
+            type="button"
+            title="Add child"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+          <button
+            onClick={() => openEdit(menu)}
+            className="flex h-5 w-5 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-700"
+            aria-label="Edit menu"
+            type="button"
+            title="Edit"
+          >
+            <Pencil className="h-3 w-3" />
+          </button>
+          <button
+            onClick={() => openDelete(menu)}
+            className="flex h-5 w-5 items-center justify-center rounded-full text-slate-400 hover:bg-red-100 hover:text-red-600"
+            aria-label="Delete menu"
+            type="button"
+            title="Delete"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
       </div>
 
       {hasChildren && isExpanded && (
