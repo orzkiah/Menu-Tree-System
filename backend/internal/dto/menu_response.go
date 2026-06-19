@@ -19,10 +19,11 @@ type MenuResponse struct {
 	Position  int            `json:"position"`
 	CreatedAt time.Time      `json:"createdAt"`
 	UpdatedAt time.Time      `json:"updatedAt"`
-	Children  []MenuResponse `json:"children,omitempty"`
+	Children  []MenuResponse `json:"children"`
 }
 
-// FromMenu maps a domain entity to its API response (without children).
+// FromMenu maps a domain entity to its API response. Children is initialized to
+// an empty slice so it always serializes as [] (never null), even for leaves.
 func FromMenu(m domain.Menu) MenuResponse {
 	return MenuResponse{
 		ID:        m.ID,
@@ -33,5 +34,6 @@ func FromMenu(m domain.Menu) MenuResponse {
 		Position:  m.Position,
 		CreatedAt: m.CreatedAt,
 		UpdatedAt: m.UpdatedAt,
+		Children:  []MenuResponse{},
 	}
 }

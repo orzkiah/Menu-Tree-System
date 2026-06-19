@@ -16,6 +16,7 @@ import (
 // MenuService defines the business operations for menus.
 // Tree retrieval, Move and Reorder are added in later phases.
 type MenuService interface {
+	GetTree(ctx context.Context, search string) ([]dto.MenuResponse, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*dto.MenuResponse, error)
 	Create(ctx context.Context, req dto.CreateMenuRequest) (*dto.MenuResponse, error)
 	Update(ctx context.Context, id uuid.UUID, req dto.UpdateMenuRequest) (*dto.MenuResponse, error)
@@ -29,6 +30,16 @@ type menuService struct {
 
 func NewMenuService(repo domain.MenuRepository, db *gorm.DB) MenuService {
 	return &menuService{repo: repo, db: db}
+}
+
+// GetTree loads all menus in a single query and assembles them into a nested
+// tree. The returned slice is always non-nil (empty when there is no data).
+func (s *menuService) GetTree(ctx context.Context, search string) ([]dto.MenuResponse, error) {
+	menus, err := s.repo.FindAll(ctx, search)
+	if err != nil {
+		return nil, err
+	}
+	return buildTree(menus), nil
 }
 
 func (s *menuService) GetByID(ctx context.Context, id uuid.UUID) (*dto.MenuResponse, error) {
@@ -135,6 +146,43 @@ func ensureParentExists(ctx context.Context, r domain.MenuRepository, parentID *
 		return apperrors.ErrParentNotFound
 	}
 	return nil
+}
+
+// buildTree assembles a flat, position-ordered menu list into a nested tree in
+// O(n). It groups children by parent in one pass, then builds each root subtree
+// recursively (supporting unlimited depth). Nodes whose parent is absent from
+// the set — e.g. matches without their parent during a search — are promoted to
+// roots so they remain visible.
+func buildTree(menus []domain.Menu) []dto.MenuResponse {
+	exists := make(map[uuid.UUID]bool, len(menus))
+	for i := range menus {
+		exists[menus[i].ID] = true
+	}
+
+	childrenByParent := make(map[uuid.UUID][]domain.Menu)
+	roots := make([]domain.Menu, 0)
+	for _, m := range menus {
+		if m.ParentID != nil && exists[*m.ParentID] {
+			childrenByParent[*m.ParentID] = append(childrenByParent[*m.ParentID], m)
+		} else {
+			roots = append(roots, m)
+		}
+	}
+
+	tree := make([]dto.MenuResponse, 0, len(roots))
+	for _, root := range roots {
+		tree = append(tree, buildNode(root, childrenByParent))
+	}
+	return tree
+}
+
+// buildNode recursively constructs a single menu node and its descendants.
+func buildNode(m domain.Menu, childrenByParent map[uuid.UUID][]domain.Menu) dto.MenuResponse {
+	node := dto.FromMenu(m)
+	for _, child := range childrenByParent[m.ID] {
+		node.Children = append(node.Children, buildNode(child, childrenByParent))
+	}
+	return node
 }
 
 var nonAlphanumeric = regexp.MustCompile(`[^a-z0-9]+`)

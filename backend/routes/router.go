@@ -28,6 +28,7 @@ func New(log *zap.Logger) *gin.Engine {
 func RegisterMenuRoutes(r *gin.Engine, h *handler.MenuHandler) {
 	menus := r.Group("/api/menus")
 	{
+		menus.GET("", h.GetTree)
 		menus.POST("", h.Create)
 		menus.GET("/:id", h.GetByID)
 		menus.PUT("/:id", h.Update)

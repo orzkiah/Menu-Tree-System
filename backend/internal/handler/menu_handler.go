@@ -23,6 +23,17 @@ func NewMenuHandler(svc service.MenuService, v *validator.Validator) *MenuHandle
 	return &MenuHandler{svc: svc, validator: v}
 }
 
+// GetTree handles GET /api/menus and GET /api/menus?search=keyword.
+// It always returns an array (empty when no menus exist).
+func (h *MenuHandler) GetTree(c *gin.Context) {
+	tree, err := h.svc.GetTree(c.Request.Context(), c.Query("search"))
+	if err != nil {
+		h.handleError(c, err)
+		return
+	}
+	response.Success(c, http.StatusOK, "menus retrieved successfully", tree)
+}
+
 // GetByID handles GET /api/menus/:id.
 func (h *MenuHandler) GetByID(c *gin.Context) {
 	id, ok := parseID(c)

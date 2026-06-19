@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"menu-tree-backend/internal/domain"
 
@@ -22,6 +23,24 @@ func NewMenuRepository(db *gorm.DB) domain.MenuRepository {
 // WithTx returns a repository bound to the given transaction handle.
 func (r *menuRepository) WithTx(tx *gorm.DB) domain.MenuRepository {
 	return &menuRepository{db: tx}
+}
+
+// FindAll loads all menus in one query, ordered by position. When search is
+// non-empty it filters on title/slug (case-insensitive). A single fetch keeps
+// tree building free of N+1 queries.
+func (r *menuRepository) FindAll(ctx context.Context, search string) ([]domain.Menu, error) {
+	var menus []domain.Menu
+	q := r.db.WithContext(ctx).Order("position asc, created_at asc")
+
+	if s := strings.TrimSpace(search); s != "" {
+		like := "%" + strings.ToLower(s) + "%"
+		q = q.Where("LOWER(title) LIKE ? OR LOWER(slug) LIKE ?", like, like)
+	}
+
+	if err := q.Find(&menus).Error; err != nil {
+		return nil, err
+	}
+	return menus, nil
 }
 
 // FindByID returns the menu, or (nil, nil) when it does not exist.

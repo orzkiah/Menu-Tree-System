@@ -12,6 +12,9 @@ import (
 //
 // FindAll, Move and Reorder are added in later phases.
 type MenuRepository interface {
+	// FindAll returns every menu (optionally filtered by a title/slug search)
+	// in a single query, ordered by position for deterministic tree building.
+	FindAll(ctx context.Context, search string) ([]Menu, error)
 	FindByID(ctx context.Context, id uuid.UUID) (*Menu, error)
 	Create(ctx context.Context, menu *Menu) error
 	Update(ctx context.Context, menu *Menu) error
