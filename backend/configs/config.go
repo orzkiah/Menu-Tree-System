@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -81,6 +82,12 @@ func Load() (*Config, error) {
 			SSLMode:  v.GetString("DB_SSLMODE"),
 		},
 		CORSAllowedOrigins: splitAndTrim(v.GetString("CORS_ALLOWED_ORIGINS")),
+	}
+
+	// Many PaaS platforms (Render, Cloud Run, Railway, Heroku) inject the port
+	// to listen on via the PORT env var — prefer it when present.
+	if port := os.Getenv("PORT"); port != "" {
+		cfg.AppPort = port
 	}
 
 	return cfg, nil

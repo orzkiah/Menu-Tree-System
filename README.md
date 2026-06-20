@@ -197,6 +197,33 @@ Production uses **multi-stage builds** (tiny static Go binary; Next.js standalon
 output), `restart: unless-stopped`, and health checks. The database persists in the
 `postgres-data` named volume.
 
+## Deploy to Free Hosting (Vercel + Render + Neon)
+
+A zero-cost setup for a portfolio: **Vercel** (frontend) + **Render** (Go backend,
+from `render.yaml`) + **Neon** (managed PostgreSQL).
+
+**1. Database — Neon**
+- Create a project at neon.tech and copy the connection details (host, user, password, db name).
+
+**2. Backend — Render**
+- Render → New → **Blueprint** → select this repo (uses [`render.yaml`](render.yaml)).
+- Set the dashboard env vars: `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (from Neon),
+  and `DB_SSLMODE=require`. Leave `CORS_ALLOWED_ORIGINS` for step 4.
+- The app listens on Render's injected `PORT` automatically; health check is `/health`.
+
+**3. Frontend — Vercel**
+- Vercel → Import this repo → **Root Directory = `frontend`**.
+- Env var: `NEXT_PUBLIC_API_URL=https://<your-backend>.onrender.com/api` → Deploy.
+
+**4. Wire CORS**
+- Back in Render, set `CORS_ALLOWED_ORIGINS=https://<your-app>.vercel.app` and redeploy.
+
+> ⚠️ Free tiers sleep when idle: Render's first request after ~15 min is slow
+> (cold start). Neon resumes in ~1s. A 10-minute uptime ping keeps the backend warm.
+
+See [`backend/.env.production.example`](backend/.env.production.example) for the full
+production env reference.
+
 ## API Examples
 
 ```bash

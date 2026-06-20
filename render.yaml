@@ -1,0 +1,36 @@
+# Render blueprint for the Go backend (free tier).
+# Database is external (e.g. Neon / Supabase free Postgres) — fill the DB_*
+# and CORS values in the Render dashboard (they are marked sync:false).
+#
+# Deploy: Render Dashboard → New → Blueprint → pick this repo.
+services:
+  - type: web
+    name: menu-tree-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_SSLMODE
+        value: require
+      # ---- secrets / per-deploy values: set in the dashboard ----
+      - key: DB_HOST
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      # After the first frontend deploy, set this to your Vercel URL, e.g.
+      # https://menu-tree-system.vercel.app
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
